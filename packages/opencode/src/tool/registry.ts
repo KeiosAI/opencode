@@ -61,7 +61,7 @@ export namespace ToolRegistry {
     return { custom }
   })
 
-  function fromPlugin(id: string, def: ToolDefinition): Tool.Info {
+  export function fromPlugin(id: string, def: ToolDefinition): Tool.Info {
     return {
       id,
       init: async (initCtx) => ({

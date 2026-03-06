@@ -22,6 +22,9 @@ import { SystemPrompt } from "./system"
 import { Flag } from "@/flag/flag"
 import { PermissionNext } from "@/permission/next"
 import { Auth } from "@/auth"
+import { devToolsMiddleware } from '@ai-sdk/devtools';
+
+const devTools = process.env.NODE_ENV == "development" ? devToolsMiddleware() : {};
 
 export namespace LLM {
   const log = Log.create({ service: "llm" })
@@ -82,7 +85,7 @@ export namespace LLM {
     const header = system[0]
     await Plugin.trigger(
       "experimental.chat.system.transform",
-      { sessionID: input.sessionID, model: input.model },
+      { sessionID: input.sessionID, model: input.model, agent: input.agent },
       { system },
     )
     // rejoin to maintain 2-part structure for caching if header unchanged
@@ -147,7 +150,24 @@ export namespace LLM {
     const maxOutputTokens =
       isCodex || provider.id.includes("github-copilot") ? undefined : ProviderTransform.maxOutputTokens(input.model)
 
-    const tools = await resolveTools(input)
+    const resolvedTools = await resolveTools(input)
+
+    const { tools } = await Plugin.trigger(
+      "keiosai.chat.prompts",
+      {
+        sessionID: input.sessionID,
+        agent: input.agent,
+        model: input.model,
+        provider,
+        system,
+        message: input.user,
+        messages: input.messages,
+      },
+      {
+        system,
+        tools: resolvedTools,
+      },
+    )
 
     // LiteLLM and some Anthropic proxies require the tools parameter to be present
     // when message history contains tool calls, even if no tools are being used.
@@ -243,6 +263,7 @@ export namespace LLM {
               return args.params
             },
           },
+          devTools,
         ],
       }),
       experimental_telemetry: {
