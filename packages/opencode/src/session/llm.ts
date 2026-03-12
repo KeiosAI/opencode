@@ -23,6 +23,7 @@ import { Flag } from "@/flag/flag"
 import { PermissionNext } from "@/permission/next"
 import { Auth } from "@/auth"
 import { devToolsMiddleware } from '@ai-sdk/devtools';
+export { jsonSchema } from "ai"
 
 const devTools = process.env.NODE_ENV == "development" ? devToolsMiddleware() : {};
 
@@ -226,18 +227,11 @@ export namespace LLM {
       maxOutputTokens,
       abortSignal: input.abort,
       headers: {
-        ...(input.model.providerID.startsWith("opencode")
+        ...(input.model.providerID !== "anthropic"
           ? {
-              "x-opencode-project": Instance.project.id,
-              "x-opencode-session": input.sessionID,
-              "x-opencode-request": input.user.id,
-              "x-opencode-client": Flag.OPENCODE_CLIENT,
+              "User-Agent": `axsdk/${Installation.VERSION}`,
             }
-          : input.model.providerID !== "anthropic"
-            ? {
-                "User-Agent": `opencode/${Installation.VERSION}`,
-              }
-            : undefined),
+          : undefined),
         ...input.model.headers,
         ...headers,
       },
