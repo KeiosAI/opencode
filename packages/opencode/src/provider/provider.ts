@@ -362,8 +362,8 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://axsdk.ai/",
+            "X-Title": "axsdk",
           },
         },
       }
@@ -373,8 +373,8 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            "http-referer": "https://opencode.ai/",
-            "x-title": "opencode",
+            "http-referer": "https://axsdk.ai/",
+            "x-title": "axsdk",
           },
         },
       }
@@ -459,8 +459,8 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://axsdk.ai/",
+            "X-Title": "axsdk",
           },
         },
       }
@@ -604,8 +604,8 @@ export namespace Provider {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://axsdk.ai/",
+            "X-Title": "axsdk",
           },
         },
       }
@@ -621,6 +621,7 @@ export namespace Provider {
         url: z.string(),
         npm: z.string(),
       }),
+      apiKey: z.string().optional(),
       name: z.string(),
       family: z.string().optional(),
       capabilities: z.object({
@@ -1080,6 +1081,7 @@ export namespace Provider {
       const baseURL = loadBaseURL(model, options)
       if (baseURL !== undefined) options["baseURL"] = baseURL
       if (options["apiKey"] === undefined && provider.key) options["apiKey"] = provider.key
+      if (model.apiKey) options["apiKey"] = model.apiKey
       if (model.headers)
         options["headers"] = {
           ...options["headers"],
@@ -1191,7 +1193,7 @@ export namespace Provider {
 
   export async function getLanguage(model: Model): Promise<LanguageModelV2> {
     const s = await state()
-    const key = `${model.providerID}/${model.id}`
+    const key = `${model.providerID}/${model.id}/${model.apiKey ?? ""}`
     if (s.models.has(key)) return s.models.get(key)!
 
     const provider = s.providers[model.providerID]

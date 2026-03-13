@@ -60,6 +60,17 @@ export namespace LLM {
       modelID: input.model.id,
       providerID: input.model.providerID,
     })
+
+    const byok: { apiKey?: string, providerId?: string, modelId?: string } = {}
+    await Plugin.trigger(
+      "keiosai.chat.byok",
+      { sessionID: input.sessionID, model: input.model, agent: input.agent },
+      { byok },
+    )
+    input.model.apiKey = byok.apiKey ?? input.model.apiKey
+    input.model.providerID = byok.providerId ?? input.model.providerID
+    input.model.id = byok.modelId ?? input.model.id
+
     const [language, cfg, provider, auth] = await Promise.all([
       Provider.getLanguage(input.model),
       Config.get(),
