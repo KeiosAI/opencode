@@ -48,31 +48,7 @@ export namespace Agent {
     })
   export type Info = z.infer<typeof Info>
 
-  const state = Instance.state(async () => {
-    const cfg = await Config.get()
-
-    const skillDirs = await Skill.dirs()
-    const whitelistedDirs = [Truncate.GLOB, ...skillDirs.map((dir) => path.join(dir, "*"))]
-    const defaults = PermissionNext.fromConfig({
-      "*": "allow",
-      doom_loop: "ask",
-      external_directory: {
-        "*": "ask",
-        ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
-      },
-      question: "deny",
-      plan_enter: "deny",
-      plan_exit: "deny",
-      // mirrors github.com/github/gitignore Node.gitignore pattern for .env files
-      read: {
-        "*": "allow",
-        "*.env": "ask",
-        "*.env.*": "ask",
-        "*.env.example": "allow",
-      },
-    })
-    const user = PermissionNext.fromConfig(cfg.permission ?? {})
-
+  const defaultAgents = (defaults: PermissionNext.Ruleset, user: PermissionNext.Ruleset, whitelistedDirs: string[]) => {
     const result: Record<string, Info> = {
       build: {
         name: "build",
@@ -201,6 +177,34 @@ export namespace Agent {
         prompt: PROMPT_SUMMARY,
       },
     }
+    return result
+  }
+
+  export const state = Instance.state(async () => {
+    const cfg = await Config.get()
+
+    const skillDirs = await Skill.dirs()
+    const whitelistedDirs = [Truncate.GLOB, ...skillDirs.map((dir) => path.join(dir, "*"))]
+    const defaults = PermissionNext.fromConfig({
+      "*": "allow",
+      doom_loop: "ask",
+      external_directory: {
+        "*": "ask",
+        ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
+      },
+      question: "deny",
+      plan_enter: "deny",
+      plan_exit: "deny",
+      // mirrors github.com/github/gitignore Node.gitignore pattern for .env files
+      read: {
+        "*": "allow",
+        "*.env": "ask",
+        "*.env.*": "ask",
+        "*.env.example": "allow",
+      },
+    })
+    const user = PermissionNext.fromConfig(cfg.permission ?? {})
+    const result = defaultAgents(defaults, user, whitelistedDirs)
 
     for (const [key, value] of Object.entries(cfg.agent ?? {})) {
       if (value.disable) {
@@ -250,7 +254,72 @@ export namespace Agent {
     return result
   })
 
+  export async function resolve(agents: Record<string, Info & { disable: boolean, permission: Config.Permission|PermissionNext.Ruleset }>) {
+    const cfg = await Config.get()
+
+    const skillDirs = await Skill.dirs()
+    const whitelistedDirs = [Truncate.GLOB, ...skillDirs.map((dir) => path.join(dir, "*"))]
+    const defaults = PermissionNext.fromConfig({
+      "*": "allow",
+      doom_loop: "ask",
+      external_directory: {
+        "*": "ask",
+        ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
+      },
+      question: "deny",
+      plan_enter: "deny",
+      plan_exit: "deny",
+      // mirrors github.com/github/gitignore Node.gitignore pattern for .env files
+      read: {
+        "*": "allow",
+        "*.env": "ask",
+        "*.env.*": "ask",
+        "*.env.example": "allow",
+      },
+    })
+    const user = PermissionNext.fromConfig(cfg.permission ?? {})
+    for (const [key, value] of Object.entries(agents)) {
+      if (value.disable) {
+        delete agents[key]
+        continue
+      }
+      try {
+        value.permission = JSON.parse(value.permission as unknown as string)
+      } catch(e) {
+
+      }
+      if(value.model) value.model = Provider.parseModel(`${value.model.providerID}/${value.model.modelID}`)
+      const task = cfg.default_agent && key == cfg.default_agent ? { "*": "allow", [cfg.default_agent]: "deny" } : { "*": "deny" }
+      value.permission = PermissionNext.merge(
+        PermissionNext.fromConfig({"*": "deny", "task": task }),
+        PermissionNext.fromConfig(value.permission as Config.Permission ?? {}))
+      const explicit = (value.permission as PermissionNext.Ruleset).some((r) => {
+        if (r.permission !== "external_directory") return false
+        if (r.action !== "deny") return false
+        return r.pattern === Truncate.GLOB
+      })
+      if (!explicit) {
+        value.permission = PermissionNext.merge(
+          value.permission as PermissionNext.Ruleset,
+          PermissionNext.fromConfig({ external_directory: { [Truncate.GLOB]: "allow" } }),
+        )
+      }
+    }
+    return agents
+  }
+
   export async function get(agent: string) {
+    // TODO: per app
+    const output = await Plugin.trigger(
+      "keiosai.agent.resolve",
+      {
+        agent
+      },
+      { resolved: null },
+    )
+    if(output.resolved) {
+      return output.resolved
+    }
     return state().then((x) => x[agent])
   }
 
@@ -268,7 +337,7 @@ export namespace Agent {
     const agents = await state()
 
     if (cfg.default_agent) {
-      const agent = agents[cfg.default_agent]
+      const agent = await get(cfg.default_agent)
       if (!agent) throw new Error(`default agent "${cfg.default_agent}" not found`)
       if (agent.mode === "subagent") throw new Error(`default agent "${cfg.default_agent}" is a subagent`)
       if (agent.hidden === true) throw new Error(`default agent "${cfg.default_agent}" is hidden`)
