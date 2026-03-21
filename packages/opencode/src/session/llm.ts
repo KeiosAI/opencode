@@ -67,9 +67,10 @@ export namespace LLM {
       { sessionID: input.sessionID, model: input.model, agent: input.agent },
       { byok },
     )
-    input.model.apiKey = byok.apiKey ?? input.model.apiKey
     input.model.providerID = byok.providerId ?? input.model.providerID
     input.model.id = byok.modelId ?? input.model.id
+    input.model = await Provider.getModel(input.model.providerID, input.model.id)
+    input.model.apiKey = byok.apiKey ?? input.model.apiKey
 
     const [language, cfg, provider, auth] = await Promise.all([
       Provider.getLanguage(input.model),
@@ -84,7 +85,8 @@ export namespace LLM {
       [
         // use agent prompt otherwise provider prompt
         // For Codex sessions, skip SystemPrompt.provider() since it's sent via options.instructions
-        ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)),
+        /* keiosai: ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)), */
+        (input.agent.prompt ? [input.agent.prompt] : []),
         // any custom prompt passed into this call
         ...input.system,
         // any custom prompt from last user message

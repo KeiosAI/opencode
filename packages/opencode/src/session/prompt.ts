@@ -95,6 +95,7 @@ export namespace SessionPrompt {
       .object({
         providerID: z.string(),
         modelID: z.string(),
+        apiKey: z.string().optional(),
       })
       .optional(),
     agent: z.string().optional(),
@@ -649,7 +650,8 @@ export namespace SessionPrompt {
       await Plugin.trigger("experimental.chat.messages.transform", {}, { messages: msgs })
 
       // Build system prompt, adding structured output instruction if needed
-      const system = [...(await SystemPrompt.environment(model)), ...(await InstructionPrompt.system())]
+      /* keiosai: const system = [...(await SystemPrompt.environment(model)), ...(await InstructionPrompt.system())] */
+      const system = []
       const format = lastUser.format ?? { type: "text" }
       if (format.type === "json_schema") {
         system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
