@@ -290,8 +290,9 @@ export namespace Agent {
       }
       if(value.model) value.model = Provider.parseModel(`${value.model.providerID}/${value.model.modelID}`)
       const task = cfg.default_agent && key == cfg.default_agent ? { "*": "allow", [cfg.default_agent]: "deny" } : { "*": "deny" }
+      const question = cfg.default_agent && key == cfg.default_agent ? { "*": "allow", [cfg.default_agent]: "deny" } : { "*": "deny" }
       value.permission = PermissionNext.merge(
-        PermissionNext.fromConfig({"*": "deny", "task": task }),
+        PermissionNext.fromConfig({"*": "deny", "task": task, "question": question }),
         PermissionNext.fromConfig(value.permission as Config.Permission ?? {}))
       const explicit = (value.permission as PermissionNext.Ruleset).some((r) => {
         if (r.permission !== "external_directory") return false
