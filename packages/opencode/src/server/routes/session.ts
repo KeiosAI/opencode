@@ -101,7 +101,7 @@ export const SessionRoutes = lazy(() =>
             description: "Get session",
             content: {
               "application/json": {
-                schema: resolver(Session.Info),
+                schema: resolver(Session.Info.extend({ status: SessionStatus.Info })),
               },
             },
           },
@@ -118,7 +118,8 @@ export const SessionRoutes = lazy(() =>
         const sessionID = c.req.valid("param").sessionID
         log.info("SEARCH", { url: c.req.url })
         const session = await Session.get(sessionID)
-        return c.json(session)
+        const status = SessionStatus.get(sessionID)
+        return c.json({ ...session, status })
       },
     )
     .get(

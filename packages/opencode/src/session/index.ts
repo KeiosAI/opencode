@@ -73,6 +73,7 @@ export namespace Session {
       share,
       revert,
       permission: row.permission ?? undefined,
+      toolSchema: row.tool_schema ?? undefined,
       time: {
         created: row.time_created,
         updated: row.time_updated,
@@ -99,6 +100,7 @@ export namespace Session {
       summary_diffs: info.summary?.diffs,
       revert: info.revert ?? null,
       permission: info.permission,
+      tool_schema: info.toolSchema,
       time_created: info.time.created,
       time_updated: info.time.updated,
       time_compacting: info.time.compacting,
@@ -146,6 +148,7 @@ export namespace Session {
         archived: z.number().optional(),
       }),
       permission: PermissionNext.Ruleset.optional(),
+      toolSchema: z.record(z.string(), z.any()).optional(),
       revert: z
         .object({
           messageID: z.string(),
@@ -220,6 +223,7 @@ export namespace Session {
         parentID: Identifier.schema("session").optional(),
         title: z.string().optional(),
         permission: Info.shape.permission,
+        toolSchema: Info.shape.toolSchema,
       })
       .optional(),
     async (input) => {
@@ -229,6 +233,7 @@ export namespace Session {
         directory: Instance.directory,
         title: input?.title,
         permission: input?.permission,
+        toolSchema: input?.toolSchema,
       })
     },
   )
@@ -296,6 +301,7 @@ export namespace Session {
     parentID?: string
     directory: string
     permission?: PermissionNext.Ruleset
+    toolSchema?: Record<string, unknown>
   }) {
     const result: Info = {
       id: Identifier.descending("session", input.id),
@@ -307,6 +313,7 @@ export namespace Session {
       parentID: input.parentID,
       title: input.title ?? createDefaultTitle(!!input.parentID),
       permission: input.permission,
+      toolSchema: input.toolSchema,
       time: {
         created: Date.now(),
         updated: Date.now(),
