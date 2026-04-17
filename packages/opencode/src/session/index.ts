@@ -75,6 +75,7 @@ export namespace Session {
       revert,
       permission: row.permission ?? undefined,
       toolSchema: row.tool_schema ?? undefined,
+      agents: row.agents ?? undefined,
       time: {
         created: row.time_created,
         updated: row.time_updated,
@@ -102,6 +103,7 @@ export namespace Session {
       revert: info.revert ?? null,
       permission: info.permission,
       tool_schema: info.toolSchema,
+      agents: info.agents,
       time_created: info.time.created,
       time_updated: info.time.updated,
       time_compacting: info.time.compacting,
@@ -150,6 +152,7 @@ export namespace Session {
       }),
       permission: PermissionNext.Ruleset.optional(),
       toolSchema: z.record(z.string(), z.any()).optional(),
+      agents: z.record(z.string(), z.any()).optional(),
       revert: z
         .object({
           messageID: z.string(),
@@ -350,6 +353,29 @@ export namespace Session {
       ? path.join(Instance.worktree, ".opencode", "plans")
       : path.join(Global.Path.data, "plans")
     return path.join(base, [input.time.created, input.slug].join("-") + ".md")
+  }
+
+  export async function setAgents(sessionID: string, agents: Record<string, any>) {
+    Database.use((db) => {
+      db.update(SessionTable)
+        .set({ agents })
+        .where(eq(SessionTable.id, sessionID))
+        .run()
+    })
+  }
+
+  export function getAgent(sessionID: string, agentName: string): any | undefined {
+    const row = Database.use((db) =>
+      db.select({ agents: SessionTable.agents }).from(SessionTable).where(eq(SessionTable.id, sessionID)).get()
+    )
+    return row?.agents?.[agentName]
+  }
+
+  export function getAgents(sessionID: string): Record<string, any> | undefined {
+    const row = Database.use((db) =>
+      db.select({ agents: SessionTable.agents }).from(SessionTable).where(eq(SessionTable.id, sessionID)).get()
+    )
+    return row?.agents ?? undefined
   }
 
   export const get = fn(Identifier.schema("session"), async (id) => {

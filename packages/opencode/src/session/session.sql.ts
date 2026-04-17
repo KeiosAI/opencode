@@ -29,6 +29,7 @@ export const SessionTable = sqliteTable(
     revert: text({ mode: "json" }).$type<{ messageID: string; partID?: string; snapshot?: string; diff?: string }>(),
     permission: text({ mode: "json" }).$type<PermissionNext.Ruleset>(),
     tool_schema: text({ mode: "json" }).$type<Record<string, unknown>>(),
+    agents: text({ mode: "json" }).$type<Record<string, any>>(),
     ...Timestamps,
     time_compacting: integer(),
     time_archived: integer(),
