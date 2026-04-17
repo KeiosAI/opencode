@@ -18,6 +18,7 @@ import { Storage } from "@/storage/storage"
 import { Log } from "../util/log"
 import { MessageV2 } from "./message-v2"
 import { Instance } from "../project/instance"
+import { Plugin } from "../plugin"
 import { SessionPrompt } from "./prompt"
 import { fn } from "@/util/fn"
 import { Command } from "../command"
@@ -336,6 +337,11 @@ export namespace Session {
     Bus.publish(Event.Updated, {
       info: result,
     })
+    await Plugin.trigger(
+      "session.config.init",
+      { sessionID: result.id, parentID: input.parentID, directory: input.directory },
+      { config: {} },
+    )
     return result
   }
 

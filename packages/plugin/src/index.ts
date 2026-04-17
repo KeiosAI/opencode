@@ -231,4 +231,12 @@ export interface Hooks {
    * Modify tool definitions (description and parameters) sent to LLM
    */
   "tool.definition"?: (input: { toolID: string }, output: { description: string; parameters: any }) => Promise<void>
+  "session.config.init"?: (
+    input: { sessionID: string; parentID?: string; directory: string },
+    output: { config: Record<string, any> },
+  ) => Promise<void>
+  "session.config.destroy"?: (
+    input: { sessionID: string },
+    output: Record<string, never>,
+  ) => Promise<void>
 }
