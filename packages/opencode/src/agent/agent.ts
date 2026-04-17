@@ -320,13 +320,11 @@ export namespace Agent {
     return agents
   }
 
-  export async function get(agent: string, sessionID?: string) {
-    // TODO: per app
+  export async function get(agent: string) {
     const output = await Plugin.trigger(
       "keiosai.agent.resolve",
       {
         agent,
-        sessionID,
       },
       { resolved: null },
     )
