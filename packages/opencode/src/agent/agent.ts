@@ -289,7 +289,18 @@ export namespace Agent {
 
       }
       if(value.model) value.model = Provider.parseModel(`${value.model.providerID}/${value.model.modelID}`)
-      const task = cfg.default_agent && key == cfg.default_agent ? { "*": "allow", [cfg.default_agent]: "deny" } : { "*": "deny" }
+      // Build task permission: controls which subagents this agent can delegate to
+      let task: Record<string, string>
+      if ((value as any).allowedSubagents && Array.isArray((value as any).allowedSubagents)) {
+        // Explicit subagent whitelist from config
+        task = { "*": "deny", ...Object.fromEntries((value as any).allowedSubagents.map((name: string) => [name, "allow"])) }
+      } else if (cfg.default_agent && key == cfg.default_agent) {
+        // Default agent can delegate to all except itself
+        task = { "*": "allow", [cfg.default_agent]: "deny" }
+      } else {
+        // Subagents cannot delegate by default
+        task = { "*": "deny" }
+      }
       const question = cfg.default_agent && key == cfg.default_agent ? { "*": "allow", [cfg.default_agent]: "deny" } : { "*": "deny" }
       value.permission = PermissionNext.merge(
         PermissionNext.fromConfig({"*": "deny", "task": task, "question": question }),
