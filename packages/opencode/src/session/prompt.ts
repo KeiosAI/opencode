@@ -414,7 +414,7 @@ export namespace SessionPrompt {
           { args: taskArgs },
         )
         let executionError: Error | undefined
-        const taskAgent = await Agent.get(task.agent)
+        const taskAgent = Session.getAgent(sessionID, task.agent) ?? await Agent.get(task.agent)
         const taskCtx: Tool.Context = {
           agent: task.agent,
           messageID: assistantMessage.id,
@@ -556,7 +556,7 @@ export namespace SessionPrompt {
       }
 
       // normal processing
-      const agent = await Agent.get(lastUser.agent)
+      const agent = Session.getAgent(sessionID, lastUser.agent) ?? await Agent.get(lastUser.agent)
       const maxSteps = agent.steps ?? Infinity
       const isLastStep = step >= maxSteps
       msgs = await insertReminders({
@@ -956,7 +956,8 @@ export namespace SessionPrompt {
   }
 
   async function createUserMessage(input: PromptInput) {
-    const agent = await Agent.get(input.agent ?? (await Agent.defaultAgent()))
+    const agentName = input.agent ?? (await Agent.defaultAgent())
+    const agent = Session.getAgent(input.sessionID, agentName) ?? await Agent.get(agentName)
 
     const model = input.model ?? agent.model ?? (await lastModel(input.sessionID))
     const full =
@@ -1497,7 +1498,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
     if (session.revert) {
       await SessionRevert.cleanup(session)
     }
-    const agent = await Agent.get(input.agent)
+    const agent = Session.getAgent(input.sessionID, input.agent) ?? await Agent.get(input.agent)
     const model = input.model ?? agent.model ?? (await lastModel(input.sessionID))
     const userMsg: MessageV2.User = {
       id: Identifier.ascending("message"),
@@ -1800,7 +1801,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
         return Provider.parseModel(command.model)
       }
       if (command.agent) {
-        const cmdAgent = await Agent.get(command.agent)
+        const cmdAgent = Session.getAgent(input.sessionID, command.agent) ?? await Agent.get(command.agent)
         if (cmdAgent?.model) {
           return cmdAgent.model
         }
@@ -1822,7 +1823,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       }
       throw e
     }
-    const agent = await Agent.get(agentName)
+    const agent = Session.getAgent(input.sessionID, agentName) ?? await Agent.get(agentName)
     if (!agent) {
       const available = await Agent.list().then((agents) => agents.filter((a) => !a.hidden).map((a) => a.name))
       const hint = available.length ? ` Available agents: ${available.join(", ")}` : ""
