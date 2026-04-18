@@ -232,7 +232,7 @@ export interface Hooks {
    */
   "tool.definition"?: (input: { toolID: string }, output: { description: string; parameters: any }) => Promise<void>
   "session.config.init"?: (
-    input: { sessionID: string; parentID?: string; directory: string },
+    input: { sessionID: string; parentID?: string; directory: string; agent?: string },
     output: { config: Record<string, any> },
   ) => Promise<void>
   "session.config.destroy"?: (
