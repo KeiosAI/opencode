@@ -340,11 +340,6 @@ export namespace Session {
     Bus.publish(Event.Updated, {
       info: result,
     })
-    await Plugin.trigger(
-      "session.config.init",
-      { sessionID: result.id, parentID: input.parentID, directory: input.directory },
-      { config: {} },
-    )
     return result
   }
 

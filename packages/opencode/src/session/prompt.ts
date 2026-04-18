@@ -956,6 +956,16 @@ export namespace SessionPrompt {
   }
 
   async function createUserMessage(input: PromptInput) {
+    // Initialize session agents if not yet loaded
+    const session = await Session.get(input.sessionID)
+    if (!session.agents) {
+      await Plugin.trigger(
+        "session.config.init",
+        { sessionID: input.sessionID, parentID: session.parentID, directory: session.directory },
+        { config: {} },
+      )
+    }
+
     const agentName = input.agent ?? (await Agent.defaultAgent())
     const agent = Session.getAgent(input.sessionID, agentName) ?? await Agent.get(agentName)
 
