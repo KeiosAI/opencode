@@ -317,6 +317,7 @@ export namespace Agent {
         )
       }
     }
+    console.log("Resolved agents:", agents)
     return agents
   }
 
