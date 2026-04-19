@@ -301,7 +301,7 @@ export namespace Agent {
         // Subagents cannot delegate by default
         task = { "*": "deny" }
       }
-      const question = cfg.default_agent && key == cfg.default_agent ? { "*": "allow", [cfg.default_agent]: "deny" } : { "*": "deny" }
+      const question = (value as any).tools.includes("question") ? { "*" : "allow" } : { "*" : "deny" }
       value.permission = PermissionNext.merge(
         PermissionNext.fromConfig({"*": "deny", "task": task, "question": question }),
         PermissionNext.fromConfig(value.permission as Config.Permission ?? {}))
